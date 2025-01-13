@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Manage Documents</h2>
+
+<!-- Add Document Form -->
+<div class="card my-4">
+    <div class="card-body">
+        <h5 class="card-title">Add New Document</h5>
+        <form method="POST" action="/api/documents">
+            <div class="mb-3">
+                <label for="title" class="form-label">Title:</label>
+                <input type="text" name="title" id="title" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="author" class="form-label">Author:</label>
+                <input type="text" name="author" id="author" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg">Add Document</button>
+        </form>
+    </div>
+</div>
+
+<!-- Document List -->
+<h3>Documents</h3>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Author</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for document in documents %}
+        <tr>
+            <td>{{ document._id }}</td>
+            <td>{{ document.title }}</td>
+            <td>{{ document.author }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

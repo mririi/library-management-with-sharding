@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Manage Loans</h2>
+
+<!-- Add Loan Form -->
+<div class="card my-4">
+    <div class="card-body">
+        <h5 class="card-title">Add New Loan</h5>
+        <form method="POST" action="/api/loans">
+            <div class="mb-3">
+                <label for="document_id" class="form-label">Select Document</label>
+                <select class="form-select" name="document_id" id="document_id" required>
+                    {% for document in documents %}
+                    <option value="{{ document._id }}">{{ document.title }} by {{ document.author }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="subscriber_id" class="form-label">Select Subscriber</label>
+                <select class="form-select" name="subscriber_id" id="subscriber_id" required>
+                    {% for subscriber in subscribers %}
+                    <option value="{{ subscriber._id }}">{{ subscriber.name }} ({{ subscriber.email }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Loan</button>
+        </form>
+    </div>
+</div>
+
+<!-- Loan List -->
+<h3>Active Loans</h3>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Document</th>
+            <th>Subscriber</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for loan in loans %}
+        <tr>
+            <td>{{ loan._id }}</td>
+            <td>{{ loan.document_title }}</td>
+            <td>{{ loan.subscriber_name }}</td>
+            <td>{{ "Returned" if loan.returned else "Active" }}</td>
+            <td>
+                {% if not loan.returned %}
+                <form method="POST" action="/api/loans/{{ loan._id }}/return" onsubmit="return confirm('Return this loan?');">
+                    <button type="submit" class="btn btn-warning btn-sm">Return</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
