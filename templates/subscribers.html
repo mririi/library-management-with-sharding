@@ -2,6 +2,8 @@
 {% block content %}
 <h2>Manage Subscribers</h2>
 
+
+
 <!-- Add Subscriber Form -->
 <div class="card my-4">
     <div class="card-body">
@@ -15,7 +17,25 @@
                 <label for="email" class="form-label">Email:</label>
                 <input type="email" name="email" id="email" class="form-control" required>
             </div>
+            <div class="mb-3">
+                <label for="phone" class="form-label">Phone:</label>
+                <input type="text" name="phone" id="phone" class="form-control" required>
+            </div>
             <button type="submit" class="btn btn-primary btn-lg">Add Subscriber</button>
+        </form>
+    </div>
+</div>
+
+<!-- Search Subscribers -->
+<div class="card my-4">
+    <div class="card-body">
+        <h5 class="card-title">Search Subscribers</h5>
+        <form method="GET" action="/api/subscribers/search" id="searchForm">
+            <div class="mb-3">
+                <label for="query" class="form-label">Search by Name, Email, or Phone:</label>
+                <input type="text" name="query" id="query" class="form-control" placeholder="Enter search term">
+            </div>
+            <button type="submit" class="btn btn-primary">Search</button>
         </form>
     </div>
 </div>
@@ -28,6 +48,8 @@
             <th>ID</th>
             <th>Name</th>
             <th>Email</th>
+            <th>Phone</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -36,8 +58,86 @@
             <td>{{ subscriber._id }}</td>
             <td>{{ subscriber.name }}</td>
             <td>{{ subscriber.email }}</td>
+            <td>{{ subscriber.phone }}</td>
+            <td>
+                <form method="POST" action="/api/subscribers/{{ subscriber._id }}/delete" style="display:inline;">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+                <button class="btn btn-warning btn-sm" onclick="openUpdateForm('{{ subscriber._id }}', '{{ subscriber.name }}', '{{ subscriber.email }}', '{{ subscriber.phone }}')">Update</button>
+            </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+
+<!-- Update Subscriber Modal -->
+<div class="modal" tabindex="-1" id="updateModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Subscriber</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="updateForm" method="POST">
+                    <div class="mb-3">
+                        <label for="updateName" class="form-label">Name:</label>
+                        <input type="text" name="name" id="updateName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="updateEmail" class="form-label">Email:</label>
+                        <input type="email" name="email" id="updateEmail" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="updatePhone" class="form-label">Phone:</label>
+                        <input type="text" name="phone" id="updatePhone" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openUpdateForm(id, name, email, phone) {
+    const form = document.getElementById('updateForm');
+    form.action = `/api/subscribers/${id}/update`;
+    document.getElementById('updateName').value = name;
+    document.getElementById('updateEmail').value = email;
+    document.getElementById('updatePhone').value = phone;
+
+    const modal = new bootstrap.Modal(document.getElementById('updateModal'));
+    modal.show();
+}
+
+// Handle search form submission
+const searchForm = document.getElementById('searchForm');
+searchForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const query = document.getElementById('query').value;
+    const response = await fetch(`/api/subscribers/search?query=${query}`);
+    const results = await response.json();
+    
+    const tbody = document.querySelector('table tbody');
+    tbody.innerHTML = '';
+    results.forEach(subscriber => {
+        const row = `
+            <tr>
+                <td>${subscriber._id}</td>
+                <td>${subscriber.name}</td>
+                <td>${subscriber.email}</td>
+                <td>${subscriber.phone}</td>
+                <td>
+                    <form method="POST" action="/api/subscribers/${subscriber._id}/delete" style="display:inline;">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                    <button class="btn btn-warning btn-sm" onclick="openUpdateForm('${subscriber._id}', '${subscriber.name}', '${subscriber.email}', '${subscriber.phone}')">Update</button>
+                </td>
+            </tr>
+        `;
+        tbody.innerHTML += row;
+    });
+});
+</script>
 {% endblock %}

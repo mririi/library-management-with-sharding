@@ -8,54 +8,166 @@
         <h5 class="card-title">Add New Loan</h5>
         <form method="POST" action="/api/loans">
             <div class="mb-3">
-                <label for="document_id" class="form-label">Select Document</label>
-                <select class="form-select" name="document_id" id="document_id" required>
+                <label for="document_id" class="form-label">Select Document:</label>
+                <select name="document_id" id="document_id" class="form-select" required>
                     {% for document in documents %}
                     <option value="{{ document._id }}">{{ document.title }} by {{ document.author }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="mb-3">
-                <label for="subscriber_id" class="form-label">Select Subscriber</label>
-                <select class="form-select" name="subscriber_id" id="subscriber_id" required>
+                <label for="borrower" class="form-label">Select Subscriber:</label>
+                <select name="borrower" id="borrower" class="form-select" required>
                     {% for subscriber in subscribers %}
                     <option value="{{ subscriber._id }}">{{ subscriber.name }} ({{ subscriber.email }})</option>
                     {% endfor %}
                 </select>
             </div>
-            <button type="submit" class="btn btn-primary">Add Loan</button>
+            <div class="mb-3">
+                <label for="date_start" class="form-label">Date Start:</label>
+                <input type="date" name="date_start" id="date_start" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="date_return" class="form-label">Date Return:</label>
+                <input type="date" name="date_return" id="date_return" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg">Add Loan</button>
+        </form>
+    </div>
+</div>
+
+<!-- Search Loans -->
+<div class="card my-4">
+    <div class="card-body">
+        <h5 class="card-title">Search Loans</h5>
+        <form method="GET" action="/api/loans/search" id="searchForm">
+            <div class="mb-3">
+                <label for="query" class="form-label">Search by Borrower, Document, or Status:</label>
+                <input type="text" name="query" id="query" class="form-control" placeholder="Enter search term">
+            </div>
+            <button type="submit" class="btn btn-primary">Search</button>
         </form>
     </div>
 </div>
 
 <!-- Loan List -->
-<h3>Active Loans</h3>
+<h3>Loans</h3>
 <table class="table table-striped">
     <thead>
         <tr>
             <th>ID</th>
             <th>Document</th>
-            <th>Subscriber</th>
+            <th>Borrower</th>
+            <th>Date Start</th>
+            <th>Date Return</th>
             <th>Status</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         {% for loan in loans %}
-        <tr>
+        <tr style="background-color: {% if not loan.returned and loan.date_return < now %}#f8d7da{% endif %}">
             <td>{{ loan._id }}</td>
-            <td>{{ loan.document_title }}</td>
-            <td>{{ loan.subscriber_name }}</td>
+            <td>{{ loan.document_id }}</td>
+            <td>{{ loan.borrower }}</td>
+            <td>{{ loan.date_start }}</td>
+            <td>{{ loan.date_return }}</td>
             <td>{{ "Returned" if loan.returned else "Active" }}</td>
             <td>
-                {% if not loan.returned %}
-                <form method="POST" action="/api/loans/{{ loan._id }}/return" onsubmit="return confirm('Return this loan?');">
-                    <button type="submit" class="btn btn-warning btn-sm">Return</button>
+                <form method="POST" action="/api/loans/{{ loan._id }}/delete" style="display:inline;">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                 </form>
-                {% endif %}
+                <button class="btn btn-warning btn-sm" onclick="openUpdateForm('{{ loan._id }}', '{{ loan.document_id }}', '{{ loan.borrower }}', '{{ loan.date_start }}', '{{ loan.date_return }}')">Update</button>
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+
+<!-- Update Loan Modal -->
+<div class="modal" tabindex="-1" id="updateModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Loan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="updateForm" method="POST">
+                    <div class="mb-3">
+                        <label for="updateDocumentId" class="form-label">Select Document:</label>
+                        <select name="document_id" id="updateDocumentId" class="form-select" required>
+                            {% for document in documents %}
+                            <option value="{{ document._id }}">{{ document.title }} by {{ document.author }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="updateBorrower" class="form-label">Select Subscriber:</label>
+                        <select name="borrower" id="updateBorrower" class="form-select" required>
+                            {% for subscriber in subscribers %}
+                            <option value="{{ subscriber._id }}">{{ subscriber.name }} ({{ subscriber.email }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="updateDateStart" class="form-label">Date Start:</label>
+                        <input type="date" name="date_start" id="updateDateStart" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="updateDateReturn" class="form-label">Date Return:</label>
+                        <input type="date" name="date_return" id="updateDateReturn" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openUpdateForm(id, documentId, borrower, dateStart, dateReturn) {
+    const form = document.getElementById('updateForm');
+    form.action = `/api/loans/${id}/update`;
+    document.getElementById('updateDocumentId').value = documentId;
+    document.getElementById('updateBorrower').value = borrower;
+    document.getElementById('updateDateStart').value = dateStart;
+    document.getElementById('updateDateReturn').value = dateReturn;
+
+    const modal = new bootstrap.Modal(document.getElementById('updateModal'));
+    modal.show();
+}
+
+// Handle search form submission
+const searchForm = document.getElementById('searchForm');
+searchForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const query = document.getElementById('query').value;
+    const response = await fetch(`/api/loans/search?query=${query}`);
+    const results = await response.json();
+    
+    const tbody = document.querySelector('table tbody');
+    tbody.innerHTML = '';
+    results.forEach(loan => {
+        const row = `
+            <tr style="background-color: ${!loan.returned && new Date(loan.date_return) < new Date() ? '#f8d7da' : ''}">
+                <td>${loan._id}</td>
+                <td>${loan.document_id}</td>
+                <td>${loan.borrower}</td>
+                <td>${loan.date_start}</td>
+                <td>${loan.date_return}</td>
+                <td>${loan.returned ? 'Returned' : 'Active'}</td>
+                <td>
+                    <form method="POST" action="/api/loans/${loan._id}/delete" style="display:inline;">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                    <button class="btn btn-warning btn-sm" onclick="openUpdateForm('${loan._id}', '${loan.document_id}', '${loan.borrower}', '${loan.date_start}', '${loan.date_return}')">Update</button>
+                </td>
+            </tr>
+        `;
+        tbody.innerHTML += row;
+    });
+});
+</script>
 {% endblock %}

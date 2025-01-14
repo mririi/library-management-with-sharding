@@ -2,6 +2,8 @@
 {% block content %}
 <h2>Manage Documents</h2>
 
+
+
 <!-- Add Document Form -->
 <div class="card my-4">
     <div class="card-body">
@@ -15,7 +17,41 @@
                 <label for="author" class="form-label">Author:</label>
                 <input type="text" name="author" id="author" class="form-control" required>
             </div>
+            <div class="mb-3">
+                <label for="genre" class="form-label">Genre:</label>
+                <input type="text" name="genre" id="genre" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="type" class="form-label">Type:</label>
+                <select name="type" id="type" class="form-select" required>
+                    <option value="book">Book</option>
+                    <option value="magazine">Magazine</option>
+                    <option value="dvd">DVD</option>
+                    <option value="others">Others</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="disponibility" class="form-label">Disponibility:</label>
+                <select name="disponibility" id="disponibility" class="form-select" required>
+                    <option value="available">Available</option>
+                    <option value="unavailable">Unavailable</option>
+                </select>
+            </div>
             <button type="submit" class="btn btn-primary btn-lg">Add Document</button>
+        </form>
+    </div>
+</div>
+
+<!-- Search Documents -->
+<div class="card my-4">
+    <div class="card-body">
+        <h5 class="card-title">Search Documents</h5>
+        <form method="GET" action="/api/documents/search" id="searchForm">
+            <div class="mb-3">
+                <label for="query" class="form-label">Search by Title, Author, Genre, or Type:</label>
+                <input type="text" name="query" id="query" class="form-control" placeholder="Enter search term">
+            </div>
+            <button type="submit" class="btn btn-primary">Search</button>
         </form>
     </div>
 </div>
@@ -28,6 +64,10 @@
             <th>ID</th>
             <th>Title</th>
             <th>Author</th>
+            <th>Genre</th>
+            <th>Type</th>
+            <th>Disponibility</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -36,8 +76,108 @@
             <td>{{ document._id }}</td>
             <td>{{ document.title }}</td>
             <td>{{ document.author }}</td>
+            <td>{{ document.genre }}</td>
+            <td>{{ document.type }}</td>
+            <td>{{ document.disponibility }}</td>
+            <td>
+                <form method="POST" action="/api/documents/{{ document._id }}/delete" style="display:inline;">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+                <button class="btn btn-warning btn-sm" onclick="openUpdateForm('{{ document._id }}', '{{ document.title }}', '{{ document.author }}', '{{ document.genre }}', '{{ document.type }}', '{{ document.disponibility }}')">Update</button>
+            </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+
+<!-- Update Document Modal -->
+<div class="modal" tabindex="-1" id="updateModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="updateForm" method="POST">
+                    <div class="mb-3">
+                        <label for="updateTitle" class="form-label">Title:</label>
+                        <input type="text" name="title" id="updateTitle" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="updateAuthor" class="form-label">Author:</label>
+                        <input type="text" name="author" id="updateAuthor" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="updateGenre" class="form-label">Genre:</label>
+                        <input type="text" name="genre" id="updateGenre" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="updateType" class="form-label">Type:</label>
+                        <select name="type" id="updateType" class="form-select" required>
+                            <option value="book">Book</option>
+                            <option value="magazine">Magazine</option>
+                            <option value="dvd">DVD</option>
+                            <option value="others">Others</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="updateDisponibility" class="form-label">Disponibility:</label>
+                        <select name="disponibility" id="updateDisponibility" class="form-select" required>
+                            <option value="available">Available</option>
+                            <option value="unavailable">Unavailable</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openUpdateForm(id, title, author, genre, type, disponibility) {
+    const form = document.getElementById('updateForm');
+    form.action = `/api/documents/${id}/update`;
+    document.getElementById('updateTitle').value = title;
+    document.getElementById('updateAuthor').value = author;
+    document.getElementById('updateGenre').value = genre;
+    document.getElementById('updateType').value = type;
+    document.getElementById('updateDisponibility').value = disponibility;
+
+    const modal = new bootstrap.Modal(document.getElementById('updateModal'));
+    modal.show();
+}
+
+// Handle search form submission
+const searchForm = document.getElementById('searchForm');
+searchForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const query = document.getElementById('query').value;
+    const response = await fetch(`/api/documents/search?query=${query}`);
+    const results = await response.json();
+    
+    const tbody = document.querySelector('table tbody');
+    tbody.innerHTML = '';
+    results.forEach(document => {
+        const row = `
+            <tr>
+                <td>${document._id}</td>
+                <td>${document.title}</td>
+                <td>${document.author}</td>
+                <td>${document.genre}</td>
+                <td>${document.type}</td>
+                <td>${document.disponibility}</td>
+                <td>
+                    <form method="POST" action="/api/documents/${document._id}/delete" style="display:inline;">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                    <button class="btn btn-warning btn-sm" onclick="openUpdateForm('${document._id}', '${document.title}', '${document.author}', '${document.genre}', '${document.type}', '${document.disponibility}')">Update</button>
+                </td>
+            </tr>
+        `;
+        tbody.innerHTML += row;
+    });
+});
+</script>
 {% endblock %}
